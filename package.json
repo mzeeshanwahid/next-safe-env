@@ -1,6 +1,6 @@
 {
   "name": "next-safe-env",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Typed, validated environment variables for Next.js and Node.js",
   "license": "MIT",
   "author": {
