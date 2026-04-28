@@ -1,0 +1,72 @@
+{
+  "name": "next-safe-env",
+  "version": "0.1.0",
+  "description": "Typed, validated environment variables for Next.js and Node.js",
+  "license": "MIT",
+  "author": {
+    "name": "Muhammad Zeeshan",
+    "email": "mzeeshanwa@gmail.com"
+  },
+  "keywords": [
+    "nextjs",
+    "env",
+    "environment",
+    "validation",
+    "typescript",
+    "zod-free",
+    "edge-runtime",
+    "server-only",
+    "next-public",
+    "dotenv",
+    "type-safe"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mzeeshanwahid/next-safe-env.git"
+  },
+  "bugs": {
+    "url": "https://github.com/mzeeshanwahid/next-safe-env/issues"
+  },
+  "homepage": "https://github.com/mzeeshanwahid/next-safe-env#readme",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint src --ext .ts",
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "npm run typecheck && npm run test && npm run build",
+    "release": "npm run prepublishOnly && npm publish"
+  },
+  "devDependencies": {
+    "@types/node": "^25.6.0",
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0",
+    "eslint": "^8.57.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.4.0",
+    "vitest": "^1.6.0"
+  }
+}

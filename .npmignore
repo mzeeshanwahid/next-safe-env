@@ -1,0 +1,23 @@
+# Source and tests
+src/
+test/
+
+# Config files
+tsconfig*.json
+tsup.config.ts
+vitest.config.ts
+.eslintrc.json
+.prettierrc
+
+# CI / tooling
+.github/
+.claude/
+
+# Docs not intended for consumers
+architecture.md
+AGENTS.md
+CONTRIBUTING.md
+
+# Dev artifacts
+node_modules/
+*.log
