@@ -1,6 +1,10 @@
-# next-safe-env
+<div align="center">
+  <img src="https://raw.githubusercontent.com/mzeeshanwahid/next-safe-env/main/logo.png" width="400" alt="next-safe-env logo" />
+  <h1>next-safe-env</h1>
+  <p>Typed, validated environment variables for Next.js and Node.js. Crash at startup, never at runtime.</p>
+</div>
 
-**Typed, validated environment variables for Next.js and Node.js. Crash at startup, never at runtime.**
+<br/>
 
 [![npm version](https://img.shields.io/npm/v/next-safe-env?color=0ea5e9&label=npm)](https://www.npmjs.com/package/next-safe-env)
 [![bundle size](https://img.shields.io/bundlephobia/minzip/next-safe-env?color=22c55e&label=gzipped)](https://bundlephobia.com/package/next-safe-env)
