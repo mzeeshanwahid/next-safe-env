@@ -1,17 +1,12 @@
 <div align="center">
-  <img src="https://raw.githubusercontent.com/mzeeshanwahid/next-safe-env/main/logo.png" width="400" alt="next-safe-env logo" />
+  <img src="https://raw.githubusercontent.com/mzeeshanwahid/next-safe-env/main/logo-nobg.png" width="400" alt="next-safe-env logo" />
   <h1>next-safe-env</h1>
   <p>Typed, validated environment variables for Next.js and Node.js. Crash at startup, never at runtime.</p>
 </div>
 
 <br/>
 
-[![npm version](https://img.shields.io/npm/v/next-safe-env?color=0ea5e9&label=npm)](https://www.npmjs.com/package/next-safe-env)
-[![bundle size](https://img.shields.io/bundlephobia/minzip/next-safe-env?color=22c55e&label=gzipped)](https://bundlephobia.com/package/next-safe-env)
-[![license](https://img.shields.io/npm/l/next-safe-env?color=a855f7)](./LICENSE)
-[![tests](https://img.shields.io/github/actions/workflow/status/mzeeshanwahid/next-safe-env/ci.yml?label=tests)](https://github.com/mzeeshanwahid/next-safe-env/actions)
-[![zero dependencies](https://img.shields.io/badge/dependencies-zero-f97316)](./package.json)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178c6)](https://www.typescriptlang.org/)
+<p align="center"><a href="https://www.npmjs.com/package/next-safe-env"><img src="https://img.shields.io/npm/v/next-safe-env?color=0ea5e9&label=npm" alt="npm version" /></a> <a href="https://bundlephobia.com/package/next-safe-env"><img src="https://img.shields.io/bundlephobia/minzip/next-safe-env?color=22c55e&label=gzipped" alt="bundle size" /></a> <a href="./LICENSE"><img src="https://img.shields.io/npm/l/next-safe-env?color=a855f7" alt="license" /></a> <a href="https://github.com/mzeeshanwahid/next-safe-env/actions"><img src="https://img.shields.io/github/actions/workflow/status/mzeeshanwahid/next-safe-env/ci.yml?label=tests" alt="tests" /></a> <a href="./package.json"><img src="https://img.shields.io/badge/dependencies-zero-f97316" alt="zero dependencies" /></a> <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/TypeScript-5.x-3178c6" alt="TypeScript" /></a></p>
 
 ---
 
@@ -51,6 +46,9 @@ This fails in five compounding ways:
 | Pretty error output | ✅ | Partial | ✅ | Manual |
 | Bundle size | **< 5 kB** | ~50 kB+ | ~10 kB | ~50 kB+ |
 | Auto-enforce `NEXT_PUBLIC_` prefix | ✅ | Manual | ❌ | ❌ |
+| Zod interop | Optional ✅ | Required | ❌ | Required |
+| `ClientEnv<T>` server-only branding | ✅ | Partial | ❌ | Manual |
+| Vite adapter | ✅ | ✅ | ❌ | Manual |
 
 If your project already uses a schema validation library, tools like `t3-env` or `envalid` integrate well with your existing setup. `next-safe-env` is for teams that want typed, validated env vars with no additional dependencies, the full feature set ships in under 5 kB.
 
@@ -372,13 +370,99 @@ When `skipValidation` is `true`, the raw values from `runtimeEnv` are returned i
 
 ---
 
+## Zod interop
+
+Teams already on Zod can pass a `z.object(...)` schema directly — no need to rewrite validators. `next-safe-env` duck-types the Zod schema at runtime so there is no peer-dependency requirement; Zod is only needed in your own project.
+
+```ts
+import { z } from 'zod'
+import { createEnv } from 'next-safe-env'
+
+export const env = createEnv({
+  server: z.object({
+    DATABASE_URL: z.string().url(),
+    PORT:         z.coerce.number().int().min(1).max(65535).default(3000),
+    NODE_ENV:     z.enum(['development', 'production', 'test']).default('development'),
+  }),
+  client: z.object({
+    NEXT_PUBLIC_APP_NAME: z.string().default('My App'),
+  }),
+  runtimeEnv: {
+    DATABASE_URL:         process.env.DATABASE_URL,
+    PORT:                 process.env.PORT,
+    NODE_ENV:             process.env.NODE_ENV,
+    NEXT_PUBLIC_APP_NAME: process.env.NEXT_PUBLIC_APP_NAME,
+  },
+})
+```
+
+- Native schemas and Zod schemas can be mixed: `server: z.object({ ... }), client: { NEXT_PUBLIC_X: str() }`.
+- All adapter rules (NEXT_PUBLIC_ prefix enforcement, browser-context stripping, etc.) apply equally.
+- Zod coercions, transforms, and defaults work end-to-end.
+- Validation failures from Zod are mapped to the same `ValidationFailure` shape and included in the pretty-printed error output.
+
+---
+
+## Server-only TypeScript branding
+
+Every key in the `server` schema is branded as `ServerOnly<T>` in the returned env object. The brand is visible in IDE tooltips, making the origin of a value clear at a glance.
+
+For stricter enforcement, import the `ClientEnv<T>` utility type to strip server vars from a type entirely — TypeScript will then error if you reference a server key where only client vars are expected:
+
+```ts
+import type { ClientEnv } from 'next-safe-env'
+import { env } from '@/env'
+
+// Only client vars — server vars are excluded at the type level
+type ClientVars = ClientEnv<typeof env>
+
+// Usage in a client-facing function:
+function renderHeader(vars: ClientVars) {
+  return vars.NEXT_PUBLIC_APP_NAME  // ✅ fine
+  // vars.DATABASE_URL              // ✗ TypeScript error: property does not exist
+}
+```
+
+> For a hard module-level guard, add `import 'server-only'` at the top of your `env.ts` file. This makes Next.js throw at build time if the module is imported in a client bundle.
+
+---
+
+## Usage - Vite
+
+For non-Next.js React apps that use `import.meta.env`. The `vite` adapter enforces the `VITE_` prefix on all client schema keys — Vite only exposes `VITE_` variables to the client bundle.
+
+```ts
+// src/env.ts
+import { createEnv, str, url, port, bool } from 'next-safe-env'
+
+export const env = createEnv({
+  server: {
+    DATABASE_URL: url(),
+    PORT:         port().default(3000),
+  },
+  client: {
+    VITE_API_URL:   url(),
+    VITE_APP_NAME:  str().default('My App'),
+    VITE_DEBUG:     bool().default(false),
+  },
+  runtimeEnv: {
+    DATABASE_URL:  process.env.DATABASE_URL,
+    PORT:          process.env.PORT,
+    VITE_API_URL:  import.meta.env.VITE_API_URL,
+    VITE_APP_NAME: import.meta.env.VITE_APP_NAME,
+    VITE_DEBUG:    import.meta.env.VITE_DEBUG,
+  },
+  adapter: 'vite',
+})
+```
+
+- Every key in `client` **must** be prefixed `VITE_`. The adapter throws immediately if it isn't.
+- Server vars are stripped from the returned object when running in a browser context.
+- The `vite` adapter is **auto-detected** when any client key starts with `VITE_` (a console warning prompts you to set `adapter: 'vite'` explicitly to suppress it).
+
+---
+
 ## Roadmap
-
-### Phase 2 - Ecosystem integrations
-
-- **Zod interop adapter** - pass a Zod schema directly: `createEnv({ server: z.object({ ... }) })`. For teams already on Zod who want the Next.js adapter and error formatting without rewriting schemas.
-- **Server-only TypeScript branding** - nominal types so that reading a server var in a client component produces a *compile error*, not just an autocomplete miss.
-- **Vite adapter** - for non-Next.js React apps that use `import.meta.env` instead of `process.env`.
 
 ### Phase 3 - Tooling
 

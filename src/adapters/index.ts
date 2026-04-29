@@ -2,11 +2,13 @@ import type { Adapter } from '../types.js'
 import { nextjsAdapter } from './nextjs.js'
 import { nodeAdapter } from './node.js'
 import { edgeAdapter } from './edge.js'
+import { viteAdapter } from './vite.js'
 
 const ADAPTERS: Record<string, Adapter> = {
   nextjs: nextjsAdapter,
   node: nodeAdapter,
   edge: edgeAdapter,
+  vite: viteAdapter,
 }
 
 /**
@@ -15,6 +17,7 @@ const ADAPTERS: Record<string, Adapter> = {
  *   - No process / no process.version → Edge Runtime → edgeAdapter
  *   - NEXT_RUNTIME is set in process.env → Next.js App Router → nextjsAdapter
  *   - Client schema has NEXT_PUBLIC_ keys → likely Next.js Pages Router → nextjsAdapter (+ warning)
+ *   - Client schema has VITE_ keys → likely Vite app → viteAdapter (+ warning)
  *   - Otherwise → plain Node.js → nodeAdapter
  */
 export function resolveAdapter(
@@ -25,7 +28,7 @@ export function resolveAdapter(
     const adapter = ADAPTERS[name]
     if (adapter === undefined) {
       throw new Error(
-        `[next-safe-env] Unknown adapter: "${name}". Valid options: nextjs, node, edge`,
+        `[next-safe-env] Unknown adapter: "${name}". Valid options: nextjs, node, edge, vite`,
       )
     }
     return adapter
@@ -50,6 +53,16 @@ export function resolveAdapter(
         "Pass adapter: 'nextjs' explicitly to suppress this warning.",
     )
     return nextjsAdapter
+  }
+
+  // Detect Vite via VITE_ client keys
+  if (clientSchemaKeys.some((k) => k.startsWith('VITE_'))) {
+    console.warn(
+      "[next-safe-env] VITE_ client keys detected. " +
+        "Defaulting to the vite adapter. " +
+        "Pass adapter: 'vite' explicitly to suppress this warning.",
+    )
+    return viteAdapter
   }
 
   return nodeAdapter

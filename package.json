@@ -18,7 +18,14 @@
     "server-only",
     "next-public",
     "dotenv",
-    "type-safe"
+    "type-safe",
+    "typed-env",
+    "schema-validated",
+    "env-validation",
+    "node.js",
+    "vite",
+    "config",
+    "secrets"
   ],
   "repository": {
     "type": "git",
@@ -57,7 +64,7 @@
     "test:watch": "vitest",
     "lint": "eslint src --ext .ts",
     "typecheck": "tsc --noEmit",
-    "prepublishOnly": "npm run typecheck && npm run test && npm run build",
+    "prepublish": "npm run typecheck && npm run test && npm run build",
     "release:patch": "npm version patch && git push --follow-tags",
     "release:minor": "npm version minor && git push --follow-tags",
     "release:major": "npm version major && git push --follow-tags"
@@ -69,6 +76,7 @@
     "eslint": "^8.57.0",
     "tsup": "^8.0.0",
     "typescript": "^5.4.0",
-    "vitest": "^1.6.0"
+    "vitest": "^1.6.0",
+    "zod": "^3.25.76"
   }
 }
