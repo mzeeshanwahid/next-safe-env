@@ -25,7 +25,8 @@
     "node.js",
     "vite",
     "config",
-    "secrets"
+    "secrets",
+    "next-safe-env"
   ],
   "repository": {
     "type": "git",
@@ -34,7 +35,7 @@
   "bugs": {
     "url": "https://github.com/mzeeshanwahid/next-safe-env/issues"
   },
-  "homepage": "https://github.com/mzeeshanwahid/next-safe-env#readme",
+  "homepage": "https://next-safe-env.dev",
   "engines": {
     "node": ">=18.0.0"
   },
