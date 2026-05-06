@@ -462,13 +462,192 @@ export const env = createEnv({
 
 ---
 
-## Roadmap
+## CLI
 
-### Phase 3 - Tooling
+`next-safe-env` ships a CLI you can run with `npx` — no install required.
 
-- **`npx next-safe-env check`** - validate your environment against the schema without starting the app. Useful in CI to gate deployments before they reach production.
-- **`npx next-safe-env init`** - interactive scaffold that generates `src/env.ts` by asking which vars you need and what type they should be.
-- **`.env.example` generation** - auto-generate a commented `.env.example` from your schema, including the expected type and any constraints as inline comments.
+```bash
+npx next-safe-env <command>
+```
+
+---
+
+### `check` — validate before you deploy
+
+Validates the current environment against your schema **without starting the app**. Useful in CI pipelines to gate deployments before they reach production.
+
+```bash
+npx next-safe-env check [file]
+```
+
+| Argument | Default | Description |
+|---|---|---|
+| `file` | `src/env.js`, then `dist/env.js` | Path to the compiled env file to validate |
+
+**Exit codes**
+
+| Code | Meaning |
+|---|---|
+| `0` | All environment variables are valid |
+| `1` | One or more variables are missing or invalid |
+
+The command imports your env file in an isolated child process. Because `createEnv` runs at import time, any validation failure triggers the same formatted error output you'd see at startup — then the process exits with code `1`.
+
+**Examples**
+
+```bash
+# Auto-discover src/env.js or dist/env.js
+npx next-safe-env check
+
+# Point at a specific compiled file
+npx next-safe-env check ./dist/env.js
+
+# In a CI step (non-zero exit halts the pipeline)
+npx next-safe-env check && echo "Env OK, deploying..."
+```
+
+**Sample output on failure**
+
+```
+[next-safe-env] Checking src/env.js...
+
+[next-safe-env] Environment validation failed — 2 error(s):
+
+  ✗ DATABASE_URL     — Expected valid URL. Got: "postgres-localhost"
+  ✗ JWT_SECRET       — Expected length >= 32. Got length: 12
+
+  Server vars:  1 valid, 2 invalid
+  Client vars:  2 valid, 0 invalid
+
+  Set the correct values in your .env file or deployment environment and restart.
+
+[next-safe-env] ✗ Validation failed.
+```
+
+> **Note:** `check` imports your compiled `.js` file — not the `.ts` source. Build your project first (`npm run build`) or use a TypeScript runner like `tsx`:
+> ```bash
+> tsx node_modules/.bin/next-safe-env check ./src/env.ts
+> ```
+
+---
+
+### `init` — interactive scaffold
+
+Generates `src/env.ts` and `.env.example` by asking which variables your app needs and what type each one should be.
+
+```bash
+npx next-safe-env init [options]
+```
+
+| Option | Default | Description |
+|---|---|---|
+| `--output <path>` | `src/env.ts` | Output path for the generated `env.ts` |
+
+**What it asks**
+
+1. Framework — `Next.js`, `Node.js`, `Vite`, or `Edge Runtime` (determines the adapter and client-var prefix)
+2. Server-side variables — name, type, optional flag, default value, and (for `str`) allowed values
+3. Client-side variables — same prompts; variable names are auto-prefixed (`NEXT_PUBLIC_` or `VITE_`) if you omit the prefix
+4. Output file path
+5. Whether to generate `.env.example`
+
+**Example session**
+
+```
+$ npx next-safe-env init
+
+next-safe-env init — Interactive scaffold
+
+Which framework are you using?
+  1. Next.js
+  2. Node.js
+  3. Vite
+  4. Edge Runtime
+
+> 1
+
+Server-side variables (press Enter with empty name to finish):
+
+  Variable name (or Enter to finish): DATABASE_URL
+  Type [str/url/num/port/bool] (str): url
+  Optional? [y/n] (n): n
+  Default value (Enter for none):
+  Allowed values, comma-separated (Enter to skip):
+
+  Variable name (or Enter to finish): PORT
+  Type [str/url/num/port/bool] (str): port
+  Optional? [y/n] (n): n
+  Default value (Enter for none): 3000
+
+  Variable name (or Enter to finish):
+
+Client-side variables (must start with NEXT_PUBLIC_, press Enter to finish):
+
+  Variable name (or Enter to finish): NEXT_PUBLIC_APP_NAME
+  Type [str/url/num/port/bool] (str):
+  Optional? [y/n] (n): n
+  Default value (Enter for none): My App
+  Allowed values, comma-separated (Enter to skip):
+
+  Variable name (or Enter to finish):
+
+Output file [src/env.ts]:
+Generate .env.example? [y/n] (y): y
+
+✓ Generated src/env.ts
+✓ Generated .env.example
+```
+
+**Generated `src/env.ts`**
+
+```ts
+import { createEnv, port, str, url } from 'next-safe-env'
+
+export const env = createEnv({
+  server: {
+    DATABASE_URL: url(),
+    PORT: port().default(3000),
+  },
+  client: {
+    NEXT_PUBLIC_APP_NAME: str().default('My App'),
+  },
+  runtimeEnv: {
+    DATABASE_URL: process.env.DATABASE_URL,
+    PORT: process.env.PORT,
+    NEXT_PUBLIC_APP_NAME: process.env.NEXT_PUBLIC_APP_NAME,
+  },
+  adapter: 'nextjs',
+})
+```
+
+---
+
+### `.env.example` generation
+
+Running `init` with the `.env.example` prompt answered `y` produces a commented template alongside `src/env.ts`. Each variable gets an inline comment describing its type, whether it is required, any constraints, and its default value — so new contributors know exactly what to fill in.
+
+**Example `.env.example`**
+
+```dotenv
+# ---- Server-side variables ----
+
+# DATABASE_URL — required valid URL
+DATABASE_URL=
+
+# PORT — required port number (1–65535)
+# Default: 3000
+PORT=3000
+
+# NODE_ENV — required string
+# Allowed values: development | production | test
+NODE_ENV=
+
+# ---- Client-side variables ----
+
+# NEXT_PUBLIC_APP_NAME — required string
+# Default: My App
+NEXT_PUBLIC_APP_NAME=My App
+```
 
 ---
 

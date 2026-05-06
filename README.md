@@ -43,6 +43,7 @@ if (isNaN(PORT)) throw new Error('PORT must be a number')
 | Zod interop | Optional ✅ | Required | ❌ | Required |
 | `ClientEnv<T>` server-only branding | ✅ | Partial | ❌ | Manual |
 | Vite adapter | ✅ | ✅ | ❌ | Manual |
+| CLI (`check` / `init`) | ✅ | ❌ | ❌ | ❌ |
 
 If your project already uses a schema validation library, tools like `t3-env` or `envalid` integrate well with your existing setup. `next-safe-env` is for teams that want typed, validated env vars with no additional dependencies - the full feature set ships in under 5 kB.
 
@@ -118,6 +119,61 @@ If any variable is missing or invalid, the app refuses to start and prints every
 
 ---
 
+## CLI
+
+`next-safe-env` ships a zero-install CLI for validation and scaffolding.
+
+### `check` — validate before you deploy
+
+Imports your compiled env file in an isolated process and exits `0` if all vars are valid, `1` if any fail. Drop it into any CI pipeline to gate deployments:
+
+```bash
+# Auto-discovers src/env.js then dist/env.js
+npx next-safe-env check
+
+# Or point at a specific file
+npx next-safe-env check ./dist/env.js
+```
+
+```
+[next-safe-env] Checking src/env.js...
+
+[next-safe-env] Environment validation failed — 2 error(s):
+
+  ✗ DATABASE_URL  — Expected valid URL. Got: "postgres-localhost"
+  ✗ JWT_SECRET    — Expected length >= 32. Got length: 12
+
+[next-safe-env] ✗ Validation failed.
+```
+
+### `init` — generate `src/env.ts` and `.env.example`
+
+An interactive scaffold that asks which variables your app needs, their types, defaults, and constraints — then writes a ready-to-use `env.ts` and a commented `.env.example`:
+
+```bash
+npx next-safe-env init
+
+# Custom output path
+npx next-safe-env init --output config/env.ts
+```
+
+The generated `.env.example` includes inline comments for every variable so new contributors know exactly what to fill in:
+
+```dotenv
+# DATABASE_URL — required valid URL
+DATABASE_URL=
+
+# PORT — required port number (1–65535)
+# Default: 3000
+PORT=3000
+
+# NODE_ENV — required string
+# Allowed values: development | production | test
+NODE_ENV=
+```
+
+---
+
 ## Documentation
 
 The full documentation is available at **[next-safe-env.dev](https://next-safe-env.dev)**.
@@ -131,6 +187,7 @@ The full documentation is available at **[next-safe-env.dev](https://next-safe-e
 - [Vite](https://next-safe-env.dev/guides/vite) - Non-Next.js React apps with `import.meta.env`
 - [Zod Interop](https://next-safe-env.dev/guides/zod-interop) - Pass `z.object(...)` schemas directly, no rewrites needed
 - [Testing](https://next-safe-env.dev/guides/testing) - Skip validation in test environments without removing your schema
+- [CLI](https://next-safe-env.dev/guides/cli) - `check` and `init` commands for CI validation and interactive scaffolding
 
 ### API Reference
 
