@@ -468,6 +468,7 @@ export const env = createEnv({
 
 ```bash
 npx next-safe-env <command>
+npx next-safe-env --help
 ```
 
 ---
@@ -541,11 +542,11 @@ npx next-safe-env init [options]
 
 | Option | Default | Description |
 |---|---|---|
-| `--output <path>` | `src/env.ts` | Output path for the generated `env.ts` |
+| `--output <path>` | `src/app/env.ts` (Next.js App Router), `app/env.ts` (Next.js Pages Router), `src/env.ts` (all others) | Output path for the generated `env.ts` |
 
 **What it asks**
 
-1. Framework — `Next.js`, `Node.js`, `Vite`, or `Edge Runtime` (determines the adapter and client-var prefix)
+1. Framework — auto-detected from `package.json` (checks for `next`, `vite`, `@cloudflare/workers-types`, etc.). If detected, you're asked to confirm; if not, you choose from `Next.js`, `Node.js`, `Vite`, or `Edge Runtime`. The framework determines the adapter and client-var prefix.
 2. Server-side variables — name, type, optional flag, default value, and (for `str`) allowed values
 3. Client-side variables — same prompts; variable names are auto-prefixed (`NEXT_PUBLIC_` or `VITE_`) if you omit the prefix
 4. Output file path
@@ -558,13 +559,8 @@ $ npx next-safe-env init
 
 next-safe-env init — Interactive scaffold
 
-Which framework are you using?
-  1. Next.js
-  2. Node.js
-  3. Vite
-  4. Edge Runtime
-
-> 1
+Detected adapter: Next.js
+Use Next.js? [y/n] (y):
 
 Server-side variables (press Enter with empty name to finish):
 
@@ -572,7 +568,6 @@ Server-side variables (press Enter with empty name to finish):
   Type [str/url/num/port/bool] (str): url
   Optional? [y/n] (n): n
   Default value (Enter for none):
-  Allowed values, comma-separated (Enter to skip):
 
   Variable name (or Enter to finish): PORT
   Type [str/url/num/port/bool] (str): port
@@ -591,14 +586,25 @@ Client-side variables (must start with NEXT_PUBLIC_, press Enter to finish):
 
   Variable name (or Enter to finish):
 
-Output file [src/env.ts]:
+Output file [src/app/env.ts]:
 Generate .env.example? [y/n] (y): y
 
-✓ Generated src/env.ts
+✓ Generated src/app/env.ts
 ✓ Generated .env.example
 ```
 
-**Generated `src/env.ts`**
+> If the adapter cannot be auto-detected, the framework menu is shown instead:
+> ```
+> Which framework are you using?
+>   1. Next.js
+>   2. Node.js
+>   3. Vite
+>   4. Edge Runtime
+>
+> >
+> ```
+
+**Generated `src/app/env.ts`**
 
 ```ts
 import { createEnv, port, str, url } from 'next-safe-env'
